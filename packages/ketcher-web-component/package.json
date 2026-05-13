@@ -40,6 +40,7 @@
   "scripts": {
     "build": "vite build",
     "clean": "rimraf dist",
+    "test:types": "tsc --noEmit",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "devDependencies": {
