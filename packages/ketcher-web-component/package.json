@@ -1,6 +1,6 @@
 {
   "name": "@quipnex-team/ketcher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Custom-element wrapper around Ketcher for framework-agnostic consumption (Angular, Vue, plain HTML). Derivative work of EPAM Ketcher (Apache-2.0).",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Quipnex-team/ketcher#readme",
