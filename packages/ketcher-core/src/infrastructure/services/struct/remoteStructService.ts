@@ -143,7 +143,16 @@ export function pickStandardServerOptions(
   ketcherId: string,
   options?: StructServiceOptions,
 ) {
-  const ketcherInstance = ketcherProvider.getKetcher(ketcherId);
+  // ketcherProvider.getKetcher throws when the id isn't found. After an
+  // editor unmounts, the service's ketcherId is not cleared, so subsequent
+  // calls hit a stale id and throw. Catch it so the chemistry options still
+  // build with sensible defaults.
+  let ketcherInstance;
+  try {
+    ketcherInstance = ketcherProvider.getKetcher(ketcherId);
+  } catch {
+    ketcherInstance = undefined;
+  }
 
   return {
     'dearomatize-on-load': options?.['dearomatize-on-load'],
@@ -154,7 +163,7 @@ export function pickStandardServerOptions(
       options?.['mass-skip-error-on-pseudoatoms'],
     'gross-formula-add-rsites': options?.['gross-formula-add-rsites'],
     'gross-formula-add-isotopes': options?.['gross-formula-add-isotopes'],
-    'ignore-no-chiral-flag': ketcherInstance.editor.options().ignoreChiralFlag,
+    'ignore-no-chiral-flag': ketcherInstance?.editor.options().ignoreChiralFlag,
     'aromatize-skip-superatoms': true,
   };
 }

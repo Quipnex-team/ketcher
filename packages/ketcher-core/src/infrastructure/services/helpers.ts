@@ -20,9 +20,17 @@ export function getLabelRenderModeForIndigo(ketcherId: string) {
     [ShowHydrogenLabels.On]: IndigoShowHydrogenLabelsMode.ALL,
   };
 
+  // getKetcher throws on missing id (e.g., after editor unmount with a stale
+  // ketcherId still set on the service). Fall back to OFF in that case.
+  let ketcher;
+  try {
+    ketcher = ketcherProvider.getKetcher(ketcherId);
+  } catch {
+    return IndigoShowHydrogenLabelsMode.OFF;
+  }
+
   return (
-    renderModeMapping[
-      ketcherProvider.getKetcher(ketcherId).editor.options().showHydrogenLabels
-    ] || IndigoShowHydrogenLabelsMode.OFF
+    renderModeMapping[ketcher.editor.options().showHydrogenLabels] ||
+    IndigoShowHydrogenLabelsMode.OFF
   );
 }
