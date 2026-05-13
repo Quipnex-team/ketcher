@@ -78,8 +78,11 @@ jobs:
           set -e
           DIST=packages/ketcher-web-component/dist
           test -f "$DIST/ketcher-webcomponent.es.js" || { echo "::error::Missing $DIST/ketcher-webcomponent.es.js"; exit 1; }
-          test -f "$DIST/ketcher-webcomponent.css"   || { echo "::error::Missing $DIST/ketcher-webcomponent.css"; exit 1; }
           test -f "$DIST/index.d.ts"                 || { echo "::error::Missing $DIST/index.d.ts"; exit 1; }
+          # CSS is intentionally inlined into the JS bundle and the standalone
+          # ketcher-webcomponent.css file is removed by the inject-layered-css
+          # vite plugin in closeBundle. Verify it's NOT present.
+          test ! -f "$DIST/ketcher-webcomponent.css" || { echo "::error::Unexpected $DIST/ketcher-webcomponent.css (should be inlined into JS)"; exit 1; }
           test -f packages/ketcher-web-component/LICENSE || { echo "::error::Missing LICENSE in web-component package"; exit 1; }
           test -f packages/ketcher-web-component/NOTICE  || { echo "::error::Missing NOTICE in web-component package"; exit 1; }
           echo "✓ Build outputs verified"
