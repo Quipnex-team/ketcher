@@ -1,0 +1,184 @@
+name: Publish @quipnex-team/ketcher Package
+
+on:
+  push:
+    branches:
+      - qx-integration
+    paths:
+      - 'packages/ketcher-web-component/src/**'
+      - 'packages/ketcher-web-component/package.json'
+      - 'packages/ketcher-web-component/vite.config.ts'
+      - 'packages/ketcher-web-component/LICENSE'
+      - 'packages/ketcher-web-component/NOTICE'
+      - 'packages/ketcher-web-component/README.md'
+      - 'packages/ketcher-core/src/**'
+      - 'packages/ketcher-standalone/src/**'
+      - 'packages/ketcher-react/src/**'
+      - '.github/workflows/publish-ketcher.yml'
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: 'Dry-run (build + version bump but skip publish/push)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@quipnex-team'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build internal packages (core, standalone, react, macromolecules)
+        run: npm run build:packages
+
+      - name: Build web-component
+        run: npm run build:web-component
+
+      - name: Verify build output
+        run: |
+          set -e
+          DIST=packages/ketcher-web-component/dist
+          test -f "$DIST/ketcher-webcomponent.es.js" || { echo "::error::Missing $DIST/ketcher-webcomponent.es.js"; exit 1; }
+          test -f "$DIST/ketcher-webcomponent.css"   || { echo "::error::Missing $DIST/ketcher-webcomponent.css"; exit 1; }
+          test -f "$DIST/index.d.ts"                 || { echo "::error::Missing $DIST/index.d.ts"; exit 1; }
+          test -f packages/ketcher-web-component/LICENSE || { echo "::error::Missing LICENSE in web-component package"; exit 1; }
+          test -f packages/ketcher-web-component/NOTICE  || { echo "::error::Missing NOTICE in web-component package"; exit 1; }
+          echo "✓ Build outputs verified"
+
+      - name: Configure git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Bump version
+        id: version
+        working-directory: packages/ketcher-web-component
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION_TYPE="${{ github.event.inputs.version_type }}"
+          else
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            if [[ $COMMIT_MSG == *"BREAKING CHANGE"* ]]; then
+              VERSION_TYPE="major"
+            elif [[ $COMMIT_MSG == feat:* ]] || [[ $COMMIT_MSG == feat\(* ]]; then
+              VERSION_TYPE="minor"
+            else
+              VERSION_TYPE="patch"
+            fi
+          fi
+          echo "Version bump type: $VERSION_TYPE"
+          # --no-git-tag-version: we'll create the tag manually with a prefixed name
+          npm version $VERSION_TYPE --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Configure npm auth
+        run: |
+          echo "@quipnex-team:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.PACKAGE_TOKEN }}" >> ~/.npmrc
+
+      - name: Publish to GitHub Packages
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: packages/ketcher-web-component
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
+
+      - name: Commit + tag version
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git add packages/ketcher-web-component/package.json
+          git commit -m "chore(ketcher-wc): bump version to v${{ steps.version.outputs.NEW_VERSION }} [skip ci]"
+          git tag "ketcher-wc-v${{ steps.version.outputs.NEW_VERSION }}"
+          git push origin HEAD:${{ github.ref }}
+          git push origin "ketcher-wc-v${{ steps.version.outputs.NEW_VERSION }}"
+
+      - name: Create GitHub Release
+        if: github.event.inputs.dry_run != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ketcher-wc-v${{ steps.version.outputs.NEW_VERSION }}
+          name: '@quipnex-team/ketcher v${{ steps.version.outputs.NEW_VERSION }}'
+          body: |
+            ## @quipnex-team/ketcher v${{ steps.version.outputs.NEW_VERSION }}
+
+            Custom-element wrapper around Ketcher 3.16 for framework-agnostic consumption.
+
+            ### Install
+            ```bash
+            npm install @quipnex-team/ketcher@${{ steps.version.outputs.NEW_VERSION }}
+            ```
+
+            ### Usage
+            ```html
+            <ketcher-editor></ketcher-editor>
+            ```
+            ```ts
+            import '@quipnex-team/ketcher';
+            import '@quipnex-team/ketcher/style.css';
+            ```
+
+            See the package README and `NOTICE` for full attribution and the list of patches from upstream Ketcher.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dry-run summary
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "::notice::Dry-run complete. Built version ${{ steps.version.outputs.NEW_VERSION }} but did NOT publish, tag, or push."
+
+  notify:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Success
+        if: needs.build-and-publish.result == 'success'
+        run: echo "✅ Published @quipnex-team/ketcher"
+      - name: Failure
+        if: needs.build-and-publish.result == 'failure'
+        run: |
+          echo "❌ Publish failed"
+          exit 1
