@@ -246,7 +246,22 @@ class IndigoService implements StructService {
       return this.defaultOptions;
     }
     if (!this.ketcherId) {
-      throw new Error('Cannot getting options because there are no ketcherId');
+      // Headless / no-editor mode (e.g., standalone rendering called from
+      // outside an Editor instance). Return the chemistry options we can
+      // derive without editor state; skip ignore-no-chiral-flag which is
+      // an editor-only setting.
+      return {
+        'dearomatize-on-load': options['dearomatize-on-load'],
+        'aromaticity-model': 'generic',
+        'smart-layout': options['smart-layout'],
+        'ignore-stereochemistry-errors':
+          options['ignore-stereochemistry-errors'],
+        'mass-skip-error-on-pseudoatoms':
+          options['mass-skip-error-on-pseudoatoms'],
+        'gross-formula-add-rsites': options['gross-formula-add-rsites'],
+        'gross-formula-add-isotopes': options['gross-formula-add-isotopes'],
+        'aromatize-skip-superatoms': true,
+      };
     }
 
     return pickStandardServerOptions(this.ketcherId, options);
