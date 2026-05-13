@@ -31,8 +31,7 @@
     "./web-component": {
       "types": "./dist/index.d.ts",
       "import": "./dist/ketcher-webcomponent.es.js"
-    },
-    "./style.css": "./dist/ketcher-webcomponent.css"
+    }
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"

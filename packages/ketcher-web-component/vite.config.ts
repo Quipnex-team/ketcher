@@ -1,7 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
-import { copyFileSync, writeFileSync, mkdirSync } from 'fs';
+import {
+  copyFileSync,
+  writeFileSync,
+  mkdirSync,
+  readFileSync,
+  unlinkSync,
+  existsSync,
+} from 'fs';
 
 const PUBLIC_DTS = `// Public type surface. Internal Ketcher types are deliberately not re-exported
 // from ketcher-core / ketcher-react so consumers don't need those packages
@@ -90,6 +97,42 @@ export default defineConfig({
         mkdirSync(distDir, { recursive: true });
         writeFileSync(resolve(distDir, 'index.d.ts'), PUBLIC_DTS, 'utf8');
         console.log('✓ wrote dist/index.d.ts');
+      },
+    },
+    {
+      // Inlines the emitted CSS into the JS bundle, wrapped in
+      // `@layer ketcher` so its `:root` variables sit below any consumer's
+      // unlayered styles in the cascade. Operates on the written files in
+      // closeBundle because Vite's cssCodeSplit:false emits the CSS via
+      // internal post-processing that bypasses the generateBundle `bundle`.
+      name: 'inject-layered-css',
+      closeBundle() {
+        const distDir = resolve(__dirname, 'dist');
+        const cssPath = resolve(distDir, 'ketcher-webcomponent.css');
+        const jsPath = resolve(distDir, 'ketcher-webcomponent.es.js');
+        if (!existsSync(cssPath) || !existsSync(jsPath)) {
+          console.warn('inject-layered-css: dist files missing, skipping');
+          return;
+        }
+        const cssContent = readFileSync(cssPath, 'utf8');
+        const jsContent = readFileSync(jsPath, 'utf8');
+        const layered = `@layer ketcher {\n${cssContent}\n}`;
+        const injector =
+          '(function(){' +
+          'if(typeof document==="undefined")return;' +
+          'if(document.querySelector("[data-quipnex-ketcher-styles]"))return;' +
+          'var s=document.createElement("style");' +
+          's.setAttribute("data-quipnex-ketcher-styles","true");' +
+          's.textContent=' +
+          JSON.stringify(layered) +
+          ';' +
+          'document.head.appendChild(s);' +
+          '})();\n';
+        writeFileSync(jsPath, injector + jsContent);
+        unlinkSync(cssPath);
+        console.log(
+          '✓ inlined dist/ketcher-webcomponent.css into JS (@layer ketcher)',
+        );
       },
     },
   ],
