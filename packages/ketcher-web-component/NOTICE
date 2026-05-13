@@ -1,0 +1,68 @@
+@quipnex-team/ketcher
+Copyright (C) 2026 Quipnex (Pvt) Ltd.
+
+This product is a derivative work of Ketcher
+Copyright (C) 2018 EPAM Systems
+Licensed under the Apache License, Version 2.0.
+
+------------------------------------------------------------------------
+Modifications from upstream Ketcher
+------------------------------------------------------------------------
+
+The following files have been modified from the upstream Ketcher
+distribution (https://github.com/epam/ketcher):
+
+  - packages/ketcher-core/src/infrastructure/services/helpers.ts
+      Defensive guard added around ketcherProvider.getKetcher() in
+      getLabelRenderModeForIndigo() to tolerate missing editor
+      instances during headless rendering.
+
+  - packages/ketcher-core/src/infrastructure/services/struct/remoteStructService.ts
+      Same defensive guard in pickStandardServerOptions().
+
+  - packages/ketcher-standalone/src/infrastructure/services/struct/standaloneStructService.ts
+      Headless-mode branch added to getStandardServerOptions() returning
+      sane defaults when no editor instance is bound.
+
+The following new workspace has been added:
+
+  - packages/ketcher-web-component (this package)
+      Custom-element wrapper for framework-agnostic consumption of
+      Ketcher (Angular, Vue, plain HTML).
+
+------------------------------------------------------------------------
+Upstream Ketcher NOTICE (preserved per Apache-2.0 §4(d))
+------------------------------------------------------------------------
+
+Ketcher
+ Copyright (C) 2018 EPAM Systems
+ This product includes software developed at EPAM Systems, Inc.
+
+ In addition, this product contains dependencies on files licensed under:
+
+ The FreeBSD Documentation License https://www.freebsd.org/copyright/freebsd-doc-license.html
+ The MIT License https://opensource.org/licenses/MIT
+ X11 License http://www.xfree86.org/3.3.6/COPYRIGHT2.html
+ Academic Free License https://opensource.org/licenses/AFL-3.0
+ Apache License, Version 1.0 http://www.apache.org/licenses/LICENSE-1.0
+ Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0
+ The 2-Clause BSD License https://opensource.org/licenses/BSD-2-Clause
+ The 3-Clause BSD License https://opensource.org/licenses/BSD-3-Clause
+ ISC License (ISC) https://opensource.org/licenses/ISC
+ GNU Lesser General Public License version 2.1 https://opensource.org/licenses/LGPL-2.1
+ The Mozilla Public License https://opensource.org/licenses/MPL-1.0
+ Public Domain https://wiki.creativecommons.org/wiki/Public_domain
+ Unlicense http://unlicense.org/
+
+------------------------------------------------------------------------
+Trademark Notice
+------------------------------------------------------------------------
+
+"Ketcher" is used here for technical identification only. This package
+is not affiliated with, endorsed by, or sponsored by EPAM Systems, Inc.
+Per Apache-2.0 §6, the License does not grant permission to use trade
+names, trademarks, service marks, or product names of the Licensor,
+except as required for reasonable and customary use in describing the
+origin of the Work and reproducing the content of this NOTICE file.
+
+For the official Ketcher distribution, see https://github.com/epam/ketcher.

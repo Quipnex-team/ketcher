@@ -1,0 +1,62 @@
+{
+  "name": "@quipnex-team/ketcher",
+  "version": "0.1.0",
+  "description": "Custom-element wrapper around Ketcher for framework-agnostic consumption (Angular, Vue, plain HTML). Derivative work of EPAM Ketcher (Apache-2.0).",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/Quipnex-team/ketcher#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Quipnex-team/ketcher.git",
+    "directory": "packages/ketcher-web-component"
+  },
+  "bugs": {
+    "url": "https://github.com/Quipnex-team/ketcher/issues"
+  },
+  "type": "module",
+  "main": "./dist/ketcher-webcomponent.es.js",
+  "module": "./dist/ketcher-webcomponent.es.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/ketcher-webcomponent.es.js"
+    },
+    "./web-component": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/ketcher-webcomponent.es.js"
+    },
+    "./style.css": "./dist/ketcher-webcomponent.css"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "scripts": {
+    "build": "vite build",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "ketcher-core": "*",
+    "ketcher-react": "*",
+    "ketcher-standalone": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rimraf": "^5.0.5",
+    "terser": "^5.36.0",
+    "typescript": "^5.6.0",
+    "vite": "^5.4.10"
+  },
+  "engines": {
+    "node": ">=24.14.1"
+  }
+}
