@@ -135,6 +135,40 @@ export default defineConfig({
         );
       },
     },
+    {
+      // Upstream Ketcher/Raphael ships a pre-bundled UMD file containing
+      // `typeof window !== "undefined" ? require("raphael") : void 0` — a UMD
+      // self-guard Rollup's commonjs plugin treats as a dynamic require and leaves
+      // intact. The bare `require` then throws `ReferenceError: require is not
+      // defined` under production esbuild consumers. Raphael attaches itself to
+      // `window.Raphael` as a side effect, so substituting the literal with a
+      // window lookup preserves behavior without polyfilling `require`.
+      //
+      // Post-build mutation rather than @rollup/plugin-replace because Vite's
+      // commonjs plugin runs before user transforms reach this file, and the
+      // alternative `enforce: 'pre'` placement was non-trivial to land reliably.
+      // This is one literal substitution in one file — keeping it dumb and direct.
+      name: 'neutralize-bare-require-raphael',
+      closeBundle() {
+        const jsPath = resolve(__dirname, 'dist/ketcher-webcomponent.es.js');
+        if (!existsSync(jsPath)) return;
+        const TARGET = 'require("raphael")';
+        const REPLACEMENT =
+          '(typeof window!=="undefined"&&window.Raphael||null)';
+        let js = readFileSync(jsPath, 'utf8');
+        const before = js;
+        js = js.split(TARGET).join(REPLACEMENT);
+        if (js !== before) {
+          writeFileSync(jsPath, js);
+          console.log('✓ neutralized bare require("raphael") in JS bundle');
+        }
+        if (js.includes(TARGET)) {
+          throw new Error(
+            `neutralize-bare-require-raphael: substitution failed — '${TARGET}' still present in bundle`,
+          );
+        }
+      },
+    },
   ],
   publicDir: false,
   build: {
