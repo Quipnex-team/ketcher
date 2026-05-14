@@ -1,6 +1,11 @@
 import type { Ketcher } from 'ketcher-core';
 import type { ButtonsConfig } from 'ketcher-react';
 
+declare module 'raphael' {
+  const Raphael: unknown;
+  export default Raphael;
+}
+
 export interface KetcherInitEventDetail {
   ketcher: Ketcher;
 }
