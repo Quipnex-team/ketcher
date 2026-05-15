@@ -10,8 +10,6 @@ import {
 registerKetcherElement('ketcher-editor');
 
 export { KetcherWebComponent, registerKetcherElement };
-export { renderKetToSvg } from './render';
-export type { RenderToSvgOptions } from './render';
 export type {
   KetcherEditorElement,
   KetcherInitEventDetail,

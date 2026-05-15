@@ -89,9 +89,6 @@ export class KetcherWebComponent extends HTMLElement {
     this.ketcher = null;
     this.structServiceProvider = null;
     this.pending = {};
-    void import('./shared-service').then(({ clearSharedServiceKetcherId }) =>
-      clearSharedServiceKetcherId(),
-    );
   }
 
   attributeChangedCallback(
@@ -166,15 +163,15 @@ export class KetcherWebComponent extends HTMLElement {
 
   private async ensureStructServiceProvider(): Promise<StructServiceProvider> {
     if (this.structServiceProvider) return this.structServiceProvider;
-    if (this._indigoApiPath) {
-      const { RemoteStructServiceProvider } = await import('ketcher-core');
-      this.structServiceProvider = new RemoteStructServiceProvider(
-        this._indigoApiPath,
+    if (!this._indigoApiPath) {
+      throw new Error(
+        '@quipnex-team/ketcher: the `indigo-api-path` attribute is required (standalone WASM was removed in v1.0.0). Set it to your BE Indigo service base URL, e.g. `https://<tenant>/indigo/v2`.',
       );
-    } else {
-      const { getSharedStandaloneProvider } = await import('./shared-service');
-      this.structServiceProvider = await getSharedStandaloneProvider();
     }
+    const { RemoteStructServiceProvider } = await import('ketcher-core');
+    this.structServiceProvider = new RemoteStructServiceProvider(
+      this._indigoApiPath,
+    );
     return this.structServiceProvider;
   }
 
